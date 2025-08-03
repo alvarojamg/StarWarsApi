@@ -1,12 +1,13 @@
 package com.api.demo.util.enums;
 
 
-public enum  Errors implements DefinitionMessage {
-    ERROR_INTERNAL("001", "Internal server error");
+public enum Errors implements DefinitionMessage {
+    ERROR_INTERNAL("001", "Internal server error"),
+    ERROR_GENDER("002", "Invalid gender. Allowed values: male, female, n/a, none, unknown"),
+    ERROR_MAX_CHARACTERS("003", "Exceeds max characters");
 
-
-    private String key;
-    private String message;
+    private final String key;
+    private final String message;
 
     Errors(String key, String message) {
         this.key = key;
@@ -15,11 +16,11 @@ public enum  Errors implements DefinitionMessage {
 
     @Override
     public String getMessage() {
-        return null;
+        return message;
     }
 
     @Override
-    public String getKey() {
-        return null;
+    public String getCode() {
+        return key;
     }
 }

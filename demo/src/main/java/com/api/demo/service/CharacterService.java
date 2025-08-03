@@ -22,6 +22,7 @@ public class CharacterService implements  ICharacter{
 
         try {
             StarWarsApiResponse people = starWarsMicroservice.getPeople(page,limit);
+            StarWarsFilmsResponse starWarsFilmsResponse = starWarsMicroservice.getFilms();
 
             return people.results().parallelStream()
                     .map(result -> {
@@ -31,7 +32,7 @@ public class CharacterService implements  ICharacter{
                                 film.properties().characters().stream()
                                         .anyMatch(url -> url.endsWith("/" + id));
 
-                        StarWarsFilmsResponse starWarsFilmsResponse = starWarsMicroservice.getFilms();
+
                         List<StarWarsFilmsResponse.FilmResult> allFilms = starWarsFilmsResponse.result();
                         List<StarWarsFilmsResponse.FilmResult> films = allFilms.stream()
                                 .filter(characterFilter)
@@ -48,9 +49,9 @@ public class CharacterService implements  ICharacter{
                         StarWarsCharacterResponse response = starWarsMicroservice.getCharacterById(id);
                         StarWarsCharacterResponse.PersonProperties character = response.result().properties();
                         String homeUrl = character.homeworld();
+
                         int lastSlashIndex = homeUrl.lastIndexOf('/');
                         String idPlanet = homeUrl.substring(lastSlashIndex + 1);
-
                         StarWarsPlanetResponse planetResponse = starWarsMicroservice.getPlanetById(idPlanet);
                         StarWarsPlanetResponse.PlanetProperties planetProperties = planetResponse.result().properties();
 
@@ -82,7 +83,6 @@ public class CharacterService implements  ICharacter{
                 List<StarWarsCharacterResponse.PersonProperties> peopleByHomeWord =  searchByHomeWord(homeWord, peopleDetail);
                 return peopleByHomeWord;
             }
-
             return searchPeople(peopleDetail,name,gender,hairColor);
 
         }catch (Exception e){
@@ -92,9 +92,9 @@ public class CharacterService implements  ICharacter{
 
     private List<StarWarsCharacterResponse.PersonProperties> searchByHomeWord(
             String homeword,
-            List<StarWarsCharacterResponse.PersonProperties> peopleBy) {
+            List<StarWarsCharacterResponse.PersonProperties> peopleDetail) {
 
-        String termLc = homeword == null
+        String planetSearch = homeword == null
                 ? ""
                 : homeword.trim().toLowerCase();
 
@@ -103,14 +103,14 @@ public class CharacterService implements  ICharacter{
                         .results()
                         .stream()
                         .filter(planet -> planet.name() != null
-                                && planet.name().toLowerCase().contains(termLc))
+                                && planet.name().toLowerCase().contains(planetSearch))
                         .collect(Collectors.toList());
 
         Set<String> planetUrls = matchingPlanets.stream()
                 .map(StarWarsPlanetsResponse.PlanetResult::url)
                 .collect(Collectors.toSet());
 
-        return peopleBy.stream()
+        return peopleDetail.stream()
                 .filter(person -> {
                     String hw = person.homeworld();
                     return hw != null && planetUrls.contains(hw);
@@ -123,16 +123,28 @@ public class CharacterService implements  ICharacter{
             String gender,
             String hairColor) {
 
-        String nameLower = name != null ? name.toLowerCase() : null;
-        String genderLower = gender != null ? gender.toLowerCase() : null;
-        String hairColorLower = hairColor != null ? hairColor.toLowerCase() : null;
+        String nameCl      = stringCleaner(name);
+        String genderCl    = stringCleaner(gender);
+        String hairColorCl = stringCleaner(hairColor);
 
-        return people.parallelStream()
-                .filter(person ->
-                        (nameLower == null || person.name().toLowerCase().contains(nameLower)) &&
-                                (genderLower == null || person.gender().equalsIgnoreCase(genderLower)) &&
-                                (hairColorLower == null || person.hairColor().toLowerCase().contains(hairColorLower))
-                )
+        List<Predicate<StarWarsCharacterResponse.PersonProperties>> predicates = new ArrayList<>();
+        if (nameCl      != null) predicates.add(p -> p.name().toLowerCase().contains(nameCl));
+        if (genderCl    != null) predicates.add(p -> p.gender().equalsIgnoreCase(genderCl));
+        if (hairColorCl != null) predicates.add(p -> p.hairColor().toLowerCase().contains(hairColorCl));
+
+        if (predicates.isEmpty()) {
+            return people;
+        }
+        Predicate<StarWarsCharacterResponse.PersonProperties> combined =
+                predicates.stream().reduce(x -> false, Predicate::or);
+
+        return people.stream()
+                .filter(combined)
                 .collect(Collectors.toList());
+    }
+
+    private String stringCleaner(String value){
+        String valueCl = value!= null ? value.trim().toLowerCase() : null;
+        return valueCl;
     }
 }

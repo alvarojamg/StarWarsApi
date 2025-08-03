@@ -21,19 +21,14 @@ import java.util.List;
 @Validated
 @RequiredArgsConstructor
 public class CharactersController {
-
-
     private final ICharacter iCharacter;
     private final CharacterValidator validator;
-
-
     @GetMapping("/people")
     public ResponseEntity<List<CharacterDto>> getPeople(
             @RequestParam(value = "page")  @Min(1) @Max(8) Integer page,
             @RequestParam(value = "limit")  @Min(1) @Max(8) Integer limit
     ){
         List<CharacterDto> characters = iCharacter.getCharacters(page, limit);
-
         return  new ResponseEntity<List<CharacterDto>>(characters, HttpStatus.OK);
     }
 
@@ -44,11 +39,8 @@ public class CharactersController {
             @RequestParam(value = "gender", required = false) String gender,
             @RequestParam(value = "hairColor", required = false) String hairColor
     ){
-        validator.validateSearchParams(name, homeWord, gender, hairColor);
+        validator.validateParams(name, gender, hairColor, homeWord);
         List<StarWarsCharacterResponse.PersonProperties> characters = iCharacter.searchCharacter(name, homeWord,gender,hairColor);
         return new ResponseEntity<>(characters, HttpStatus.OK);
     }
-
-
-
 }

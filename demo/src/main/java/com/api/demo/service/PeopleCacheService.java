@@ -14,10 +14,11 @@ import java.util.stream.Collectors;
 public class PeopleCacheService {
     @Autowired
     StarWarsMicroservice starWarsMicroservice;
+    private final Integer page =  17;
+    private final Integer limit = 82;
     @Cacheable(value = "peopleCache")
     public List<StarWarsCharacterResponse.PersonProperties> getPeopleDetail(){
-        Integer page = 17;
-        Integer limit  = 82;
+
         StarWarsApiResponse personResults = starWarsMicroservice.getPeople(page,limit);
         List<PersonResult> people = personResults.results();
 
