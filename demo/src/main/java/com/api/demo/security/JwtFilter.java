@@ -3,10 +3,12 @@ package com.api.demo.security;
 
 import com.api.demo.util.security.JwtUtil;
 import io.jsonwebtoken.JwtException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -17,7 +19,11 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+@RequiredArgsConstructor
+@Component
 public class JwtFilter extends OncePerRequestFilter {
+
+    private final JwtUtil jwtUtil;
 
     @Override
     protected void doFilterInternal(HttpServletRequest req,
@@ -31,7 +37,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 List<SimpleGrantedAuthority> authorities = Arrays.asList(
                         new SimpleGrantedAuthority("ROLE_USER")
                 );
-                String user = JwtUtil.validateAndExtractUsername(token);
+                String user = jwtUtil.validateAndExtractUsername(token);
 
                 var auth = new UsernamePasswordAuthenticationToken(user, null, authorities);
                 auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
